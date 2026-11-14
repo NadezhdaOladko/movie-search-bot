@@ -26,7 +26,7 @@ def show_history(chat_id: int, user_id: int) -> None:
     for count, movie in enumerate(history, start=1):
         text += (
             f"{count}. {movie.movie_title}\n"
-            f"🕒 {movie.search_date.strftime("%d.%m.%Y %H:%M:%S")}\n\n"
+            f"🕒 {movie.search_date.strftime('%d.%m.%Y %H:%M:%S')}\n\n"
         )
 
     bot.send_message(
