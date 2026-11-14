@@ -21,16 +21,16 @@ Telegram-бот для поиска информации о фильмах с и
 
 ## Используемые технологии
 
-| Технология | Назначение |
-|---|---|
-| Python 3.13 | Основной язык разработки |
+| Технология       | Назначение |
+|------------------|---|
+| Python 3.14.0    | Основной язык разработки |
 | pyTelegramBotAPI | Взаимодействие с Telegram Bot API |
-| requests | HTTP-запросы к TMDb API |
-| python-dotenv | Загрузка конфигурации из `.env` |
-| SQLAlchemy | Работа с базой данных через ORM |
-| SQLite | Хранение истории поиска |
-| Git | Контроль версий |
-| GitHub | Хранение исходного кода |
+| requests         | HTTP-запросы к TMDb API |
+| python-dotenv    | Загрузка конфигурации из `.env` |
+| SQLAlchemy       | Работа с базой данных через ORM |
+| SQLite           | Хранение истории поиска |
+| Git              | Контроль версий |
+| GitHub           | Хранение исходного кода |
 
 ## Используемое API
 
@@ -78,6 +78,14 @@ movie-search-bot/
 ├── database/
 │   └── database.py
 │
+├── docs/
+│   └── screenshots/
+│       ├── main-menu.jpeg
+│       ├── movie-search.jpeg
+│       ├── random-movie.jpeg
+│       ├── top-10.jpeg
+│       └── search-history.jpeg
+│
 ├── keyboards/
 │   ├── history_keyboard.py
 │   ├── main_menu.py
@@ -104,8 +112,8 @@ movie-search-bot/
 ### 1. Клонирование репозитория
 
 ```bash
-git clone <repository-url>
-cd python_basic_diploma
+git clone https://github.com/NadezhdaOladko/movie-search-bot.git
+cd movie-search-bot
 ```
 
 ### 2. Создание виртуального окружения
@@ -163,6 +171,23 @@ python main.py
 Работа с базой данных реализована с помощью SQLAlchemy ORM.
 
 История хранит информацию о пользователе, найденном фильме и дате поиска. Пользователь может просматривать и очищать свою историю через Telegram-бота.
+
+## Демонстрация работы
+
+### Главное меню
+<img src="docs/screenshots/main-menu.jpeg" alt="Главное меню" width="300">
+
+### Поиск фильма
+<img src="docs/screenshots/movie-search.jpeg" alt="Поиск фильма" width="300">
+
+### Случайный фильм
+<img src="docs/screenshots/random-movie.jpeg" alt="Случайный фильм" width="300">
+
+### Топ-10 фильмов
+<img src="docs/screenshots/top10.jpeg" alt="Топ-10 фильмов" width="300">
+
+### История поиска
+<img src="docs/screenshots/search-history.jpeg" alt="История поиска" width="300">
 
 ## Автор
 
