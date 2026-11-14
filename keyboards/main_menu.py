@@ -1,18 +1,4 @@
-from telebot.types import (ReplyKeyboardMarkup,
-                           KeyboardButton,
-                           InlineKeyboardButton,
-                           InlineKeyboardMarkup
-                           )
-
-
-def gen_main_menu_markup() -> ReplyKeyboardMarkup:
-    """Создает постоянную клавиатуру с кнопкой перехода в главное меню."""
-    button = KeyboardButton(text="Главное меню")
-
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add(button)
-
-    return keyboard
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def gen_help_menu_markup() -> InlineKeyboardMarkup:
@@ -35,7 +21,10 @@ def gen_help_menu_markup() -> InlineKeyboardMarkup:
     )
 
     keyboard = InlineKeyboardMarkup()
-    keyboard.add(button_1, button_2, button_3, button_4)
+    keyboard.row(button_1)
+    keyboard.row(button_2)
+    keyboard.row(button_3)
+    keyboard.row(button_4)
 
     return keyboard
 

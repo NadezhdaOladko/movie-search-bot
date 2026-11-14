@@ -1,257 +1,172 @@
-import requests
-from config import TMDB_API_KEY
 import random
 from datetime import datetime
 
-BASE_URL: str = "https://api.themoviedb.org/3"
-IMAGE_BASE_URL: str = "https://image.tmdb.org/t/p/w500"
+import requests
+
+from config import TMDB_API_KEY
+
+
+BASE_URL = "https://api.themoviedb.org/3"
+IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
+REQUEST_TIMEOUT = 10
+MAX_RANDOM_ATTEMPTS = 5
+
+
+def _make_request(endpoint: str, params: dict | None = None) -> dict:
+    """Выполняет GET-запрос к TMDB API."""
+    request_params = {
+        "api_key": TMDB_API_KEY,
+        "language": "ru-RU",
+    }
+    if params:
+        request_params.update(params)
+
+    try:
+        response = requests.get(
+            f"{BASE_URL}/{endpoint.lstrip('/')}",
+            params=request_params,
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.JSONDecodeError as exc:
+        raise ValueError(
+            "❌ Получен некорректный ответ от TMDB."
+        ) from exc
+    except requests.RequestException as exc:
+        raise ValueError(
+            "❌ Не удалось получить данные от TMDB. Попробуйте позже."
+        ) from exc
+
+
+def _format_movie(movie: dict) -> dict:
+    """Форматирует данные фильма для отображения пользователю."""
+    release_date = movie.get("release_date")
+
+    if release_date:
+        try:
+            release_date = datetime.strptime(
+                release_date, "%Y-%m-%d"
+            ).strftime("%d.%m.%Y")
+        except ValueError:
+            release_date = "Неизвестно"
+    else:
+        release_date = "Неизвестно"
+
+    poster_path = movie.get("poster_path")
+
+    return {
+        "id": movie["id"],
+        "title": movie.get("title", "Без названия"),
+        "release_date": release_date,
+        "rating": movie.get("vote_average", 0),
+        "overview": movie.get("overview") or "Описание отсутствует.",
+        "poster": f"{IMAGE_BASE_URL}{poster_path}" if poster_path else None,
+    }
 
 
 def search_movie(movie_name: str) -> dict:
-    """
-        Выполняет поиск фильма по названию через API TMDb.
-
-        Args:
-            movie_name: Название фильма.
-
-        Returns:
-            Ответ API в формате JSON.
-        """
-    response = requests.get(
-        f"{BASE_URL}/search/movie",
-        params={
-            "api_key": TMDB_API_KEY,
-            "query": movie_name,
-            "language": "ru-RU"
-        }
+    """Ищет фильмы по названию."""
+    return _make_request(
+        "search/movie",
+        {"query": movie_name},
     )
-
-    return response.json()
 
 
 def get_movie_info(response: dict) -> dict:
-    """
-        Извлекает основную информацию о первом найденном фильме.
+    """Извлекает информацию о первом найденном фильме."""
+    results = response.get("results", [])
 
-        Args:
-            response: Ответ API TMDb.
-
-        Returns:
-            Словарь с информацией о фильме:
-            id, title, release_date, rating, overview, poster.
-
-        Raises:
-            ValueError: Если фильм не найден.
-        """
-    if response["results"]:
-        movie = response["results"][0]
-        release_date = datetime.strptime(
-            movie["release_date"], "%Y-%m-%d"
-        ).strftime("%d.%m.%Y")
-        poster = (
-            IMAGE_BASE_URL + movie["poster_path"]
-            if movie["poster_path"]
-            else None
+    if not results:
+        raise ValueError(
+            "❌ Фильм не найден. Попробуйте ввести другое название.\n\n"
+            "Чтобы начать новый поиск, отправьте команду /movie или воспользуйтесь главным меню."
         )
-        return {
-            "id": movie["id"],
-            "title": movie["title"],
-            "release_date": release_date,
-            "rating": movie["vote_average"],
-            "overview": movie["overview"],
-            "poster": poster
-        }
-    raise ValueError("❌ Фильм не найден. Попробуйте ввести другое название.")
+
+    return _format_movie(results[0])
 
 
 def search_top_10() -> dict:
-    """
-        Получает список фильмов с самым высоким рейтингом.
-
-        Returns:
-            Ответ API TMDb в формате JSON.
-        """
-    response = requests.get(
-        f"{BASE_URL}/movie/top_rated",
-        params={
-            "api_key": TMDB_API_KEY,
-            "language": "ru-RU",
-            "page": 1,
-        }
+    """Получает список фильмов с самым высоким рейтингом."""
+    return _make_request(
+        "movie/top_rated",
+        {"page": 1},
     )
-
-    return response.json()
 
 
 def get_top_10_movies(response: dict) -> list[tuple[str, int]]:
-    """
-    Формирует список названий десяти лучших фильмов.
-
-    Args:
-        response: Ответ API TMDb.
-
-    Returns:
-        Список из десяти названий фильмов.
-    """
+    """Формирует список названий десяти лучших фильмов."""
     return [
-        (movie["title"],
-         movie["id"])
-        for movie in response["results"][:10]
+        (movie["title"], movie["id"])
+        for movie in response.get("results", [])[:10]
     ]
 
 
 def search_random_movie() -> dict:
-    """
-    Получает список фильмов со случайной страницы TMDb.
-
-    Returns:
-        Ответ API TMDb в формате JSON.
-    """
-    while True:
+    """Получает список фильмов со случайной страницы TMDB."""
+    for _ in range(MAX_RANDOM_ATTEMPTS):
         page = random.randint(1, 500)
-
-        response = requests.get(
-            f"{BASE_URL}/discover/movie",
-            params={
-                "api_key": TMDB_API_KEY,
-                "language": "ru-RU",
+        response = _make_request(
+            "discover/movie",
+            {
                 "page": page,
                 "sort_by": "vote_average.desc",
                 "vote_count.gte": 1000,
-            }
+            },
         )
 
-        data = response.json()
+        if response.get("results"):
+            return response
 
-        if data["results"]:
-            return data
+    raise ValueError(
+        "❌ Не удалось подобрать случайный фильм. Попробуйте позже."
+    )
 
 
 def get_random_movie(response: dict) -> dict:
-    """
-    Выбирает случайный фильм из списка и возвращает
-    результат поиска этого фильма.
+    """Выбирает случайный фильм и получает его данные по ID."""
+    results = response.get("results", [])
 
-    Args:
-        response: Ответ API TMDb.
+    if not results:
+        raise ValueError("❌ Список фильмов пуст.")
 
-    Returns:
-        Ответ API TMDb с информацией о случайном фильме.
-    """
-    movie = random.choice(response["results"])
-    return search_movie(movie["title"])
+    movie = random.choice(results)
+    movie_data = _make_request(f"movie/{movie['id']}")
+
+    return {"results": [movie_data]}
 
 
 def search_trailer(movie_id: int) -> dict:
-    """
-    Получает список видеоматериалов фильма (трейлеры, тизеры и др.).
-
-    Args:
-        movie_id: Идентификатор фильма в TMDb.
-
-    Returns:
-        Ответ API TMDb в формате JSON.
-    """
-    response = requests.get(
-        f"{BASE_URL}/movie/{movie_id}/videos",
-        params={
-            "api_key": TMDB_API_KEY,
-            "language": "ru-RU"
-        }
-    )
-
-    return response.json()
+    """Получает видеоматериалы фильма."""
+    return _make_request(f"movie/{movie_id}/videos")
 
 
 def get_watch_providers_data(movie_id: int) -> dict:
-    """
-    Получает список онлайн-платформ, на которых доступен фильм.
-
-    Args:
-        movie_id: Идентификатор фильма в TMDb.
-
-    Returns:
-        Ответ API TMDb в формате JSON.
-    """
-    response = requests.get(
-        f"{BASE_URL}/movie/{movie_id}/watch/providers",
-        params={
-            "api_key": TMDB_API_KEY
-        }
-    )
-
-    return response.json()
+    """Получает информацию о платформах для просмотра фильма."""
+    return _make_request(f"movie/{movie_id}/watch/providers")
 
 
 def get_watch_providers(response: dict) -> list[str] | None:
-    """
-    Извлекает список онлайн-платформ, на которых доступен фильм.
-
-    Последовательно проверяет Казахстан, Россию и США.
-    Если фильм доступен в нескольких странах, объединяет список
-    платформ без повторений.
-
-    Args:
-        response: Ответ API TMDb.
-
-    Returns:
-        Список (providers), где:
-            providers — строки с названием платформ;
-
-        Если информации о доступности нет, возвращает None.
-    """
-    results = response["results"]
+    """Извлекает платформы просмотра для Казахстана, России и США."""
+    results = response.get("results", {})
     countries = ["KZ", "RU", "US"]
+    provider_types = ["flatrate", "free", "ads", "rent", "buy"]
     providers = []
+
     for country in countries:
-        if country not in results:
-            continue
+        country_data = results.get(country, {})
 
-        country_data = results[country]
-        for provider in country_data.get("flatrate", []):
-            provider_name = provider["provider_name"]
-            if provider_name not in providers:
-                providers.append(provider_name)
+        for provider_type in provider_types:
+            for provider in country_data.get(provider_type, []):
+                name = provider.get("provider_name")
 
-    if not providers:
-        return None
+                if name and name not in providers:
+                    providers.append(name)
 
-    return providers
+    return providers or None
 
 
 def search_movie_by_id(movie_id: int) -> dict:
-    """
-    Получает подробную информацию о фильме по его id.
-
-    Args:
-        movie_id: Идентификатор фильма в TMDb.
-
-    Returns:
-        Словарь с информацией о фильме.
-    """
-    response = requests.get(
-        f"{BASE_URL}/movie/{movie_id}",
-        params={
-            "api_key": TMDB_API_KEY,
-            "language": "ru-RU"
-        }
-    )
-
-    movie = response.json()
-    release_date = datetime.strptime(
-        movie["release_date"], "%Y-%m-%d"
-    ).strftime("%d.%m.%Y")
-    poster = (
-        IMAGE_BASE_URL + movie["poster_path"]
-        if movie["poster_path"]
-        else None
-    )
-
-    return {
-        "id": movie["id"],
-        "title": movie["title"],
-        "release_date": release_date,
-        "rating": movie["vote_average"],
-        "overview": movie["overview"],
-        "poster": poster
-    }
+    """Получает и форматирует информацию о фильме по ID."""
+    movie = _make_request(f"movie/{movie_id}")
+    return _format_movie(movie)
