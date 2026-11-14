@@ -79,7 +79,8 @@ def get_movie_info(response: dict) -> dict:
 
     if not results:
         raise ValueError(
-            "❌ Фильм не найден. Попробуйте ввести другое название."
+            "❌ Фильм не найден. Попробуйте ввести другое название.\n\n"
+            "Чтобы начать новый поиск, отправьте команду /movie или воспользуйтесь главным меню."
         )
 
     return _format_movie(results[0])

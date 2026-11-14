@@ -24,9 +24,7 @@ def setup_bot_menu():
         BotCommand("history", "История поиска"),
     ])
 
-    bot.set_chat_menu_button(
-        menu_button=MenuButtonCommands()
-    )
+    bot.set_chat_menu_button(menu_button=MenuButtonCommands())
 
 
 if __name__ == "__main__":

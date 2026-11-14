@@ -6,6 +6,7 @@ from api.movie_api import (
 )
 from utils.movie_message import send_movie_info
 from keyboards.movie_keyboard import gen_top10_markup, gen_movie_markup
+from database.database import save_movie_to_history
 
 
 def show_top10(chat_id: int) -> None:
@@ -61,7 +62,7 @@ def movie_from_top(call):
             movie=movie,
             reply_markup=gen_movie_markup(movie["id"])
         )
-
+        save_movie_to_history(call.from_user.id, movie)
     except (ValueError, IndexError):
         bot.send_message(
             call.message.chat.id,

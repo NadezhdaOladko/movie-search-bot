@@ -21,7 +21,10 @@ def gen_help_menu_markup() -> InlineKeyboardMarkup:
     )
 
     keyboard = InlineKeyboardMarkup()
-    keyboard.add(button_1, button_2, button_3, button_4)
+    keyboard.row(button_1)
+    keyboard.row(button_2)
+    keyboard.row(button_3)
+    keyboard.row(button_4)
 
     return keyboard
 
