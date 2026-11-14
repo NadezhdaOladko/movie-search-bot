@@ -1,17 +1,20 @@
+from sqlalchemy import select, delete
+
 from loader import bot
-from database.database import Movie
+from database.database import Movie, Session
 from keyboards.history_keyboard import gen_history_markup
 
 
 def show_history(chat_id: int, user_id: int) -> None:
     """Отправляет пользователю последние 10 записей истории поиска фильмов."""
-    history = (
-        Movie
-        .select()
-        .where(Movie.user_id == user_id)
-        .order_by(Movie.id.desc())
-        .limit(10)
-    )
+
+    with Session() as session:
+        history = session.scalars(
+            select(Movie)
+            .where(Movie.user_id == user_id)
+            .order_by(Movie.id.desc())
+            .limit(10)
+        ).all()
 
     if not history:
         bot.send_message(
@@ -43,7 +46,10 @@ def send_history(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "del_history")
 def handle_del_history_callback(call):
-    Movie.delete().where(Movie.user_id == call.from_user.id).execute()
+    with Session() as session:
+        session.execute(delete(Movie).where(Movie.user_id == call.from_user.id))
+        session.commit()
+
     bot.answer_callback_query(call.id, "История удалена")
     bot.edit_message_text(
         "📚 История запросов очищена.",

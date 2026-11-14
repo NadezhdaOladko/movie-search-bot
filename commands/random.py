@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from sqlalchemy import insert
+
 from loader import bot
 from api.movie_api import (
     search_random_movie,
@@ -7,7 +9,7 @@ from api.movie_api import (
     get_movie_info,
 )
 from utils.movie_message import send_movie_info
-from database.database import Movie
+from database.database import Movie, Session
 from keyboards.movie_keyboard import gen_movie_markup
 
 
@@ -30,12 +32,15 @@ def send_random_movie_impl(chat_id: int, user_id: int) -> None:
             reply_markup=gen_movie_markup(movie["id"])
         )
 
-        history_record = Movie(
-            user_id=user_id,
-            movie_title=movie["title"],
-            search_date=datetime.now()
-        )
-        history_record.save()
+        with Session() as session:
+            session.execute(
+                insert(Movie).values(
+                    user_id=user_id,
+                    movie_title=movie["title"],
+                    search_date=datetime.now()
+                )
+            )
+            session.commit()
     except ValueError as exc:
         bot.send_message(chat_id, str(exc))
 
@@ -46,4 +51,3 @@ def send_random_movie(message):
         message.chat.id,
         message.from_user.id
     )
-

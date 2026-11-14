@@ -1,20 +1,21 @@
-from peewee import (
-    SqliteDatabase,
-    Model,
-    CharField,
-    IntegerField,
-    DateTimeField
-)
+from datetime import datetime
 
-db = SqliteDatabase('movies.db')
+from sqlalchemy import create_engine, DateTime
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
 
 
-class Movie(Model):
-    id = IntegerField(primary_key=True)
-    user_id = IntegerField()
-    movie_title = CharField()
-    search_date = DateTimeField()
+engine = create_engine('sqlite:///movies.db')
+Session = sessionmaker(bind=engine)
 
-    class Meta:
-        database = db
-        table_name = "movie_history"
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Movie(Base):
+    __tablename__ = 'movie_history'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(nullable=False)
+    movie_title: Mapped[str] = mapped_column(nullable=False)
+    ssearch_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)

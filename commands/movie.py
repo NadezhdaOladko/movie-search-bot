@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from sqlalchemy import insert
+
 from loader import bot
 from states.movie_states import MovieStates
 from api.movie_api import (
@@ -10,7 +12,7 @@ from api.movie_api import (
     get_watch_providers,
 )
 from utils.movie_message import send_movie_info
-from database.database import Movie
+from database.database import Movie, Session
 from keyboards.movie_keyboard import gen_movie_markup
 
 
@@ -53,12 +55,15 @@ def display_info(message):
             reply_markup=gen_movie_markup(movie["id"])
         )
 
-        history_record = Movie(
-            user_id=message.from_user.id,
-            movie_title=movie["title"],
-            search_date=datetime.now()
-        )
-        history_record.save()
+        with Session() as session:
+            session.execute(
+                insert(Movie).values(
+                    user_id=message.from_user.id,
+                    movie_title=movie["title"],
+                    search_date=datetime.now()
+                )
+            )
+            session.commit()
     except ValueError as exc:
         bot.reply_to(message, str(exc))
     finally:

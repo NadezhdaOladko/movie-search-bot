@@ -2,4 +2,3 @@ pyTelegramBotAPI==4.34.0
 python-dotenv==1.2.2
 requests==2.34.2
 SQLAlchemy==2.1.8
-peewee==4.1.1
